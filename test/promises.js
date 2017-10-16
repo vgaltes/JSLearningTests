@@ -212,4 +212,56 @@ describe("How to use promises", () => {
     it("An invalid promise creation throws an exception, doesn't return a rejected promise", () => {
         (() => new Promise(null)).should.throw;
     });
+
+    it("Promise all wait for more than one promise", () => {
+        const promise1 = simplePromise(2);
+        const promise2 = simplePromise(5);
+        const all = Promise.all([promise1, promise2]);
+
+        return all.should.eventually.be.deep.equal([2, 5]);
+    });
+
+    it("Promise all gets rejected if any of the promises is rejected", () => {
+        const promise1 = simplePromise(2);
+        const promise2 = simplePromise(-2);
+        const all = Promise.all([promise1, promise2]);
+
+        return all.should.eventually.be.rejectedWith("Must be a positive number.");
+    });
+
+    it("Promise race returns the promise that returns first", () => {
+        const promiseDelay = new Promise((resolve, reject) => {
+            setTimeout(function(){
+                resolve(42);
+            }, 200);
+        });
+        const promise = simplePromise(3);
+        const race = Promise.race([promiseDelay, promise]);
+
+        return race.should.eventually.be.equal(3);
+    });
+
+    it("Promise race gets rejected if any of the promises is rejected before another resolves.", () => {
+        const promiseDelay = new Promise((resolve, reject) => {
+            setTimeout(function(){
+                resolve(42);
+            }, 200);
+        });
+        const promise = simplePromise(-2);
+        const race = Promise.race([promiseDelay, promise]);
+
+        return race.should.eventually.be.rejectedWith("Must be a positive number.");
+    });
+
+    it("If an error is catched, generic handler error will not catch it", () => {
+        const promise = 
+            Promise.resolve(2)
+            .then((value) => value)
+            .then((value) => Promise.reject("An error"))
+            .catch((error) => 42)
+            .then((value) => value)
+            .catch((error) => should.fail("Should not get here"));
+
+        return promise.should.eventually.be.equal(42);
+    });
 });
